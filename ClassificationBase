@@ -1,0 +1,128 @@
+# Begin by importing the following libraries
+import sklearn
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns;
+import numpy as np
+
+
+from sklearn.datasets import make_moons
+
+X, y = make_moons(n_samples=100, noise=0.15, random_state=42)
+
+# Create a DataFrame
+df_1 = pd.DataFrame(X, columns=['Feature1', 'Feature2'])
+df_1['Class'] = y
+
+# Visualize the dataset
+plt.scatter(X[y == 0][:, 0], X[y == 0][:, 1], color='red', label='Class 0')
+plt.scatter(X[y == 1][:, 0], X[y == 1][:, 1], color='blue', label='Class 1')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.legend()
+plt.title('Crescent-shaped k-NN Dataset')
+plt.show()
+
+
+def point_generator(n_points=5, noise=0.2):
+    """
+    Generator that produces `n_points` random points for classification
+    using crescent (moons) shapes.
+
+    Parameters:
+    - n_points: Number of points to generate (default is 5).
+    - noise: Standard deviation of Gaussian noise added to the data (default is 0.2).
+    """
+    from sklearn.datasets import make_moons
+
+    while True:
+        X, _ = make_moons(n_samples=n_points, noise=noise)
+        for i in range(n_points):
+            yield X[i]
+
+gen = point_generator()
+
+# Generate and collect 5 points
+points = [next(gen) for _ in range(5)]
+
+# Convert to DataFrame for visualization and further use
+df_2 = pd.DataFrame(points, columns=['Feature1', 'Feature2'])
+
+print("Generated Points:")
+print(df_2)
+
+# Visualize the generated points
+plt.scatter(df_2['Feature1'], df_2['Feature2'], color='green')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.title('Generated Points for Classification')
+plt.show()
+
+
+'''
+Add your code here
+
+The original labelled data is given with df_1 and the points you need to classify are given with df_2.
+Loop over the labelled data to find the k closest points and take the majority label and assign it to our target point.
+You may choose a value of k to your liking for this part, I would recommed something between 3 - 7.
+
+'''
+k = 3
+row_number_df_1 = 100
+col_number_df_1 = 3
+row_number_df_2 = 5
+col_number_df_2 = 2
+for row in range(row_number_df_2):
+  feature1_test = df_2.iloc[row, 0]
+  feature2_test = df_2.iloc[row, 1]
+  distances = []
+  for index in range(row_number_df_1):
+    x_cord = df_1.iloc[index, 0]
+    y_cord = df_1.iloc[index, 1]
+    class_value = df_1.iloc[index, 2]
+    distance = ((x_cord-feature1_test)**2 + (y_cord-feature2_test)**2)**0.5
+    distances.append([distance, class_value])
+    distances.sort()
+    k_closest = []
+  for ks in range(k):
+    k_closest.append(distances[ks])
+  
+  zero_count = 0
+  one_count = 0
+  for ks in range(k):
+    class_value = k_closest[ks][1]
+    if class_value == 0:
+      zero_count += 1
+    else:
+      one_count += 1
+  if one_count > zero_count:
+    label_assigned = 1
+  else:
+    label_assigned = 0
+  print(f" Class:{label_assigned} given to point [{round(feature1_test, 3)},{round(feature2_test, 3)}]")
+
+
+'''
+Add your code here
+'''
+X, y = make_moons(n_samples=100, noise=0.15, random_state=42)
+
+# Create a DataFrame
+df_1 = pd.DataFrame(X, columns=['Feature1', 'Feature2'])
+df_1['Class'] = y
+
+#trying
+tempx = df_2.Feature1
+tempy = df_2.Feature2
+
+# Visualize the dataset
+plt.scatter(X[y == 0][:, 0], X[y == 0][:, 1], color='red', label='Class 0')
+plt.scatter(X[y == 1][:, 0], X[y == 1][:, 1], color='blue', label='Class 1')
+plt.scatter(tempx, tempy, color = 'green', label = 'test data')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.legend()
+plt.title('Crescent-shaped k-NN Dataset with test values')
+plt.show()
+
+
