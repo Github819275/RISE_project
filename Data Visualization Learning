@@ -1,0 +1,180 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+df = pd.read_csv("forestfires.csv")
+pd.set_option('display.max_columns',50)
+
+ffmc = df[(df['FFMC']) == 92.3]
+print(ffmc)
+ffmc = df[['FFMC', 'temp', 'wind']]
+print(ffmc)
+
+print(df.iloc[1:4])  # integer location
+print(df.iloc[1,3])
+
+for index, row in df.iterrows():
+    print(index, row['month'])
+
+print(df.loc[(df['month'] == 'dec') & (df['area'] > 0)])
+
+print(df.sort_values('FFMC').tail(20))
+print(df.sort_values(['RH', 'rain'], ascending=[1,0]).head(10))  # one increasing, one opposite
+
+df['Total_Index'] = df['FFMC'] + df['DMC'] + df['DC'] + df['ISI']
+df = df.drop(columns = ['ISI', 'month'])
+
+cols = df.columns.values
+
+df.to_csv('modified.csv')
+
+df = df.reset_index()
+
+print(df.loc[df['day'].str.contains('s')])
+print(df.loc[~df['day'].str.contains('s')])  # reverse condition
+
+column_name = 'area'
+x_df = df[column_name]
+print(x_df.describe())
+
+mean_value=round(df[column_name].mean(), 2)
+print('Mean Value: '+str(mean_value))
+median_value=round(df[column_name].median(), 2)
+print('Median Value: '+str(median_value))
+mode_value=df[column_name].mode()
+print('Mode Value: '+str(mode_value))
+distinct_values = x_df.nunique()
+print(distinct_values)
+
+months = ['jan','feb','mar','apr','may','jun','jul', 'aug', 'sep', 'oct','nov','dec']
+months_f = []
+for j in months:
+    x = len(df[df['month'] == j])
+    months_f.append(x)
+plt.bar(months, months_f)
+plt.title('Fire Occurrences')
+plt.xlabel('Month of the year')
+plt.ylabel('Frequency')
+plt.show()
+
+days = ['mon','tue','wed','thu','fri','sat','sun']
+days_f = []
+for j in days:
+    x = len(df[df['day'] == j])
+    days_f.append(x)
+plt.bar(days, days_f)
+plt.title('Fire Occurrences')
+plt.xlabel('Day of the Week')
+plt.ylabel('Frequency')
+plt.show()
+frequency = df['day'].value_counts() # much easier way
+
+print(df.isnull().sum())  # how much values missing in each column
+
+j = 'DC'
+x_df = df[j]
+plt.hist(x_df, bins = 30)
+plt.title(f'Histogram of {j}')
+plt.xlabel(j)
+plt.ylabel('Frequency')
+plt.show()
+
+x_axis = list(range(1, 13))
+RH = df.RH
+months = ['jan','feb','mar','apr','may','jun','jul', 'aug', 'sep', 'oct','nov','dec']
+data = []
+for j in months:
+    x = RH.loc[(df['month'] == j)]
+    data.append(x)
+plt.figure(figsize=(8, 6))
+plt.boxplot(data, widths=0.6)
+plt.xticks(x_axis, months)
+plt.title('RH compared to months')
+plt.xlabel('Months')
+plt.ylabel('RH')
+plt.show()
+
+month_order = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+df['month'] = pd.Categorical(df['month'], categories=month_order, ordered=True)
+bins = [0,20,40,60,80,100]
+bin_labels = ['0-20','20-40','40-60','60-80','80-100']
+df['RH_binned'] = pd.cut(df['RH'], bins=bins, labels=bin_labels, include_lowest=True)
+contingency_table = pd.crosstab(df['month'], df['RH_binned'])
+print(contingency_table)
+
+x_df = df[['X','Y','FFMC','DMC','DC', 'ISI','temp','RH','wind','rain','area']]
+print(x_df.cov())
+
+vmin, vmax = -100, 100
+plt.figure(figsize=(8, 6))
+hm = sns.heatmap(x_df.cov(), annot=True,annot_kws={"size": 7}, vmin=vmin, vmax=vmax)
+plt.show()
+
+a = df['temp']
+b = df['RH']
+plt.scatter(a, b)
+plt.xlabel('temp')
+plt.ylabel('RH')
+plt.title('Scatter Plot')
+# plt.xlim(70,100)
+# plt.ylim((0, 30))
+plt.show()
+
+a = df['DC']
+b = df['ISI']
+a = sorted(a)
+b = sorted(b)
+plt.plot(a, b)
+plt.xlabel('DC')
+plt.ylabel('ISI')
+plt.title('Line Graph')
+# plt.xlim(70,100)
+# plt.ylim((0, 30))
+plt.show()
+
+n_df=(x_df-x_df.min())/(x_df.max()-x_df.min())
+print(n_df)
+data_to_standardize = x_df.cov()
+scaler = StandardScaler()
+scaler.fit(data_to_standardize)
+standardized_data = scaler.transform(data_to_standardize)
+print(standardized_data)
+
+vmin, vmax = -100, 100
+plt.figure(figsize=(8, 6))
+hm = sns.heatmap(standardized_data, annot=True,annot_kws={"size": 7})
+plt.show()
+
+updated_df = df
+new_cols = ['FFMC', 'DMC', 'DC' ,'ISI' ,'temp' ,'RH' ,'wind', 'rain',
+ 'area']
+for j in new_cols:
+    q1 = df[j].quantile(0.25)
+    q3 = df[j].quantile(0.75)
+    iqr = q3 - q1
+
+    lower_bound = q1 - (1.5 * iqr)
+    upper_bound = q3 + (1.5 * iqr)
+    outliers = df[(df[j] < lower_bound) | (df[j] > upper_bound)]
+
+
+    updated_df = updated_df[(updated_df[j] >= lower_bound) & (updated_df[j] <= upper_bound)]
+
+days = ['mon','tue','wed','thu','fri','sat','sun']
+days_f = []
+for j in days:
+    x = len(updated_df[updated_df['day'] == j])
+    days_f.append(x)
+plt.bar(days, days_f)
+plt.title('Fire Occurrences, Outliers Removed')
+plt.xlabel('Day of the Week')
+plt.ylabel('Frequency')
+plt.show()
+
+
+
+
+
+
+
